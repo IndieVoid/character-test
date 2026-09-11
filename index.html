@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Character Viewer</title>
+
+    <style>
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #111;
+            font-family: Arial, sans-serif;
+        }
+
+        #viewer {
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 12px 18px;
+            background: white;
+            color: black;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="viewer"></div>
+
+<div id="controls">
+    <button id="robeButton">Remove Robe</button>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+
+import * as THREE from "three";
+
+import {
+    OrbitControls
+} from "three/addons/controls/OrbitControls.js";
+
+import {
+    GLTFLoader
+} from "three/addons/loaders/GLTFLoader.js";
+
+
+// ------------------------------------
+// SETUP
+// ------------------------------------
+
+const viewer = document.getElementById("viewer");
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x111111);
+
+
+// ------------------------------------
+// CAMERA
+// ------------------------------------
+
+const camera = new THREE.PerspectiveCamera(
+    35,
+    viewer.clientWidth / viewer.clientHeight,
+    0.1,
+    1000
+);
+
+camera.position.set(0, 1.5, 4);
+
+
+// ------------------------------------
+// RENDERER
+// ------------------------------------
+
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+});
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio, 2)
+);
+
+renderer.setSize(
+    viewer.clientWidth,
+    viewer.clientHeight
+);
+
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+viewer.appendChild(renderer.domElement);
+
+
+// ------------------------------------
+// LIGHTING
+// ------------------------------------
+
+const ambient = new THREE.HemisphereLight(
+    0xffffff,
+    0x444444,
+    2
+);
+
+scene.add(ambient);
+
+
+const keyLight = new THREE.DirectionalLight(
+    0xffffff,
+    3
+);
+
+keyLight.position.set(3, 5, 4);
+
+scene.add(keyLight);
+
+
+// ------------------------------------
+// CONTROLS
+// ------------------------------------
+
+const controls = new OrbitControls(
+    camera,
+    renderer.domElement
+);
+
+controls.enableDamping = true;
+
+controls.target.set(0, 1, 0);
+
+controls.minDistance = 1.5;
+
+controls.maxDistance = 8;
+
+
+// ------------------------------------
+// LOAD GLBs
+// ------------------------------------
+
+const loader = new GLTFLoader();
+
+let robe;
+
+
+// BODY
+
+loader.load(
+    "Body.glb",
+
+    function(gltf) {
+
+        const body = gltf.scene;
+
+        scene.add(body);
+
+        console.log("Body loaded");
+
+    },
+
+    undefined,
+
+    function(error) {
+
+        console.error(
+            "Body failed to load:",
+            error
+        );
+
+    }
+);
+
+
+// ROBE
+
+loader.load(
+    "Robe.glb",
+
+    function(gltf) {
+
+        robe = gltf.scene;
+
+        scene.add(robe);
+
+        console.log("Robe loaded");
+
+    },
+
+    undefined,
+
+    function(error) {
+
+        console.error(
+            "Robe failed to load:",
+            error
+        );
+
+    }
+);
+
+
+// ------------------------------------
+// ROBE BUTTON
+// ------------------------------------
+
+const robeButton =
+    document.getElementById("robeButton");
+
+let robeOn = true;
+
+robeButton.addEventListener(
+    "click",
+    function() {
+
+        if (!robe) return;
+
+        robeOn = !robeOn;
+
+        robe.visible = robeOn;
+
+        robeButton.textContent =
+            robeOn
+                ? "Remove Robe"
+                : "Wear Robe";
+
+    }
+);
+
+
+// ------------------------------------
+// RESIZE
+// ------------------------------------
+
+window.addEventListener(
+    "resize",
+    function() {
+
+        camera.aspect =
+            viewer.clientWidth /
+            viewer.clientHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            viewer.clientWidth,
+            viewer.clientHeight
+        );
+
+    }
+);
+
+
+// ------------------------------------
+// LOOP
+// ------------------------------------
+
+function animate() {
+
+    requestAnimationFrame(animate);
+
+    controls.update();
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
